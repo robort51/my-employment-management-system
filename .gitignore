@@ -1,0 +1,25 @@
+# Mac 系统垃圾文件
+.DS_Store
+
+# IDEA 配置目录
+.idea/
+*.iml
+*.iws
+
+# VS Code 配置目录
+.vscode/
+
+# Java/Spring Boot 编译产生的文件
+target/
+mvnw
+mvnw.cmd
+.mvn/
+*.class
+
+# Vue/Node.js 依赖和构建文件
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env.local
