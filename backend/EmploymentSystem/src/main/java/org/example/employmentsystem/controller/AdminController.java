@@ -8,12 +8,14 @@ import org.example.employmentsystem.common.Result;
 import org.example.employmentsystem.dto.AuditDTO;
 import org.example.employmentsystem.entity.CompanyProfile;
 import org.example.employmentsystem.entity.JobPosition;
+import org.example.employmentsystem.entity.SysUser;
 import org.example.employmentsystem.service.CompanyProfileService;
 import org.example.employmentsystem.service.JobPositionService;
+import org.example.employmentsystem.service.SysUserService;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 管理员控制器 - 审核企业、审核职位
+ * 管理员控制器 - 审核企业、审核职位、用户管理
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -22,6 +24,7 @@ public class AdminController {
 
     private final CompanyProfileService companyProfileService;
     private final JobPositionService jobPositionService;
+    private final SysUserService sysUserService;
 
     /**
      * 检查当前用户是否为管理员
@@ -89,5 +92,33 @@ public class AdminController {
         checkAdmin(request);
         jobPositionService.audit(id, auditDTO.getAuditStatus(), auditDTO.getAuditRemark());
         return Result.success("职位审核完成", null);
+    }
+
+    // ===================== 用户管理 =====================
+
+    /**
+     * 分页查询用户列表
+     * GET /api/admin/user/list?pageNum=1&pageSize=10
+     */
+    @GetMapping("/user/list")
+    public Result<IPage<SysUser>> getUserList(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        checkAdmin(request);
+        IPage<SysUser> page = sysUserService.getUserPage(pageNum, pageSize);
+        return Result.success(page);
+    }
+
+    /**
+     * 切换用户状态（启用/禁用）
+     * PUT /api/admin/user/toggle-status/{id}
+     */
+    @PutMapping("/user/toggle-status/{id}")
+    public Result<?> toggleUserStatus(HttpServletRequest request,
+                                       @PathVariable Long id) {
+        checkAdmin(request);
+        sysUserService.toggleStatus(id);
+        return Result.success("操作成功", null);
     }
 }

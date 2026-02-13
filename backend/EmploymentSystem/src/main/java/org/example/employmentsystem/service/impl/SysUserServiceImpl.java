@@ -2,6 +2,8 @@ package org.example.employmentsystem.service.impl;
 
 import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.dto.LoginDTO;
@@ -107,5 +109,28 @@ public class SysUserServiceImpl implements SysUserService {
         }
         user.setPassword(null); // 不返回密码
         return user;
+    }
+
+    @Override
+    public IPage<SysUser> getUserPage(int pageNum, int pageSize) {
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(SysUser::getCreateTime);
+        IPage<SysUser> page = sysUserMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        // 清除密码字段
+        page.getRecords().forEach(u -> u.setPassword(null));
+        return page;
+    }
+
+    @Override
+    public void toggleStatus(Long id) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        if ("admin".equals(user.getRole())) {
+            throw new BusinessException("不能禁用管理员账号");
+        }
+        user.setStatus(user.getStatus() == 1 ? 2 : 1);
+        sysUserMapper.updateById(user);
     }
 }

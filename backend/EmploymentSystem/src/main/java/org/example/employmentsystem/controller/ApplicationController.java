@@ -77,6 +77,20 @@ public class ApplicationController {
     // ===================== 企业端 =====================
 
     /**
+     * 企业查看收到的所有申请（通过企业下所有职位汇总）
+     * GET /api/application/company?pageNum=1&pageSize=10
+     */
+    @GetMapping("/company")
+    public Result<IPage<JobApplication>> companyApplications(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        Long companyId = getCompanyId(request);
+        IPage<JobApplication> page = jobApplicationService.getCompanyApplications(companyId, pageNum, pageSize);
+        return Result.success(page);
+    }
+
+    /**
      * 企业查看某职位收到的申请
      * GET /api/application/job/{jobId}?pageNum=1&pageSize=10
      */

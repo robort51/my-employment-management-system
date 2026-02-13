@@ -19,4 +19,7 @@ public interface JobApplicationService {
 
     /** 获取单条申请详情 */
     JobApplication getById(Long id);
+
+    /** 企业查看收到的所有申请（通过企业下所有职位汇总） */
+    IPage<JobApplication> getCompanyApplications(Long companyId, int pageNum, int pageSize);
 }

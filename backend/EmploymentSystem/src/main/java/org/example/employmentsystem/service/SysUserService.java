@@ -1,5 +1,6 @@
 package org.example.employmentsystem.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.example.employmentsystem.dto.LoginDTO;
 import org.example.employmentsystem.dto.LoginVO;
 import org.example.employmentsystem.dto.RegisterDTO;
@@ -24,4 +25,14 @@ public interface SysUserService {
      * 根据ID获取用户信息
      */
     SysUser getUserById(Long id);
+
+    /**
+     * 分页查询用户列表
+     */
+    IPage<SysUser> getUserPage(int pageNum, int pageSize);
+
+    /**
+     * 切换用户状态（启用/禁用）
+     */
+    void toggleStatus(Long id);
 }

@@ -79,6 +79,23 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
+    public IPage<JobApplication> getCompanyApplications(Long companyId, int pageNum, int pageSize) {
+        // 查询企业下所有职位ID
+        LambdaQueryWrapper<JobPosition> jobWrapper = new LambdaQueryWrapper<>();
+        jobWrapper.eq(JobPosition::getCompanyId, companyId)
+                  .select(JobPosition::getId);
+        java.util.List<Long> jobIds = jobPositionMapper.selectList(jobWrapper)
+                .stream().map(JobPosition::getId).toList();
+        if (jobIds.isEmpty()) {
+            return new Page<>(pageNum, pageSize);
+        }
+        LambdaQueryWrapper<JobApplication> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(JobApplication::getJobId, jobIds)
+               .orderByDesc(JobApplication::getApplyTime);
+        return jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+    }
+
+    @Override
     public void handle(Long id, Long companyId, Integer status, String remark) {
         JobApplication application = jobApplicationMapper.selectById(id);
         if (application == null) {
