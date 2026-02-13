@@ -219,4 +219,4 @@ CREATE TABLE notification (
 -- 初始数据：插入管理员账号（密码为 admin123 的 MD5 加密）
 -- ----------------------------
 INSERT INTO sys_user (username, password, role, status) VALUES
-('admin', 'e64b78fc3bc91bcbc7dc232ba8ec59e0', 'admin', 1);
+('admin', '0192023a7bbd73250516f069df18b500', 'admin', 1);
