@@ -5,11 +5,16 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.example.employmentsystem.common.BusinessException;
+import org.example.employmentsystem.entity.CompanyProfile;
 import org.example.employmentsystem.entity.JobApplication;
 import org.example.employmentsystem.entity.JobPosition;
+import org.example.employmentsystem.entity.StudentProfile;
+import org.example.employmentsystem.mapper.CompanyProfileMapper;
 import org.example.employmentsystem.mapper.JobApplicationMapper;
 import org.example.employmentsystem.mapper.JobPositionMapper;
+import org.example.employmentsystem.mapper.StudentProfileMapper;
 import org.example.employmentsystem.service.JobApplicationService;
+import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -21,6 +26,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
     private final JobApplicationMapper jobApplicationMapper;
     private final JobPositionMapper jobPositionMapper;
+    private final CompanyProfileMapper companyProfileMapper;
+    private final StudentProfileMapper studentProfileMapper;
+    private final NotificationService notificationService;
 
     @Override
     public void apply(Long studentId, Long jobId) {
@@ -43,6 +51,15 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         application.setJobId(jobId);
         application.setStatus(0); // 已投递
         jobApplicationMapper.insert(application);
+
+        // 通知企业有新的简历投递
+        CompanyProfile company = companyProfileMapper.selectById(job.getCompanyId());
+        if (company != null) {
+            notificationService.send(company.getUserId(),
+                    "收到新的简历投递",
+                    "您发布的职位【" + job.getTitle() + "】收到了新的简历投递",
+                    "apply");
+        }
     }
 
     @Override
@@ -77,6 +94,22 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         application.setStatus(status);
         application.setRemark(remark);
         jobApplicationMapper.updateById(application);
+
+        // 通知学生申请处理结果
+        StudentProfile student = studentProfileMapper.selectById(application.getStudentId());
+        if (student != null) {
+            String statusText = switch (status) {
+                case 1 -> "已查看";
+                case 2 -> "通过筛选";
+                case 3 -> "未通过";
+                case 5 -> "已录用";
+                default -> "已更新";
+            };
+            notificationService.send(student.getUserId(),
+                    "求职申请状态更新",
+                    "您投递的职位【" + job.getTitle() + "】状态已更新为：" + statusText,
+                    "apply");
+        }
     }
 
     @Override

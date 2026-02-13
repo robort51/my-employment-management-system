@@ -9,6 +9,7 @@ import org.example.employmentsystem.dto.CompanyProfileDTO;
 import org.example.employmentsystem.entity.CompanyProfile;
 import org.example.employmentsystem.mapper.CompanyProfileMapper;
 import org.example.employmentsystem.service.CompanyProfileService;
+import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class CompanyProfileServiceImpl implements CompanyProfileService {
 
     private final CompanyProfileMapper companyProfileMapper;
+    private final NotificationService notificationService;
 
     @Override
     public CompanyProfile getByUserId(Long userId) {
@@ -71,6 +73,14 @@ public class CompanyProfileServiceImpl implements CompanyProfileService {
         profile.setAuditStatus(auditStatus);
         profile.setAuditRemark(auditRemark);
         companyProfileMapper.updateById(profile);
+
+        // 通知企业审核结果
+        String statusText = (auditStatus == 1) ? "已通过" : "未通过";
+        String remarkPart = (auditRemark != null && !auditRemark.isBlank()) ? "，备注：" + auditRemark : "";
+        notificationService.send(profile.getUserId(),
+                "企业认证审核结果",
+                "您的企业认证审核" + statusText + remarkPart,
+                "audit");
     }
 
     private void copyDtoToEntity(CompanyProfileDTO dto, CompanyProfile profile) {

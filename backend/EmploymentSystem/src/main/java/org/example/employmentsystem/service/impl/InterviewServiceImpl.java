@@ -6,13 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.dto.InterviewDTO;
-import org.example.employmentsystem.entity.Interview;
-import org.example.employmentsystem.entity.JobApplication;
-import org.example.employmentsystem.entity.JobPosition;
+import org.example.employmentsystem.entity.*;
 import org.example.employmentsystem.mapper.InterviewMapper;
 import org.example.employmentsystem.mapper.JobApplicationMapper;
 import org.example.employmentsystem.mapper.JobPositionMapper;
+import org.example.employmentsystem.mapper.StudentProfileMapper;
+import org.example.employmentsystem.mapper.CompanyProfileMapper;
 import org.example.employmentsystem.service.InterviewService;
+import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +29,9 @@ public class InterviewServiceImpl implements InterviewService {
     private final InterviewMapper interviewMapper;
     private final JobApplicationMapper jobApplicationMapper;
     private final JobPositionMapper jobPositionMapper;
+    private final StudentProfileMapper studentProfileMapper;
+    private final CompanyProfileMapper companyProfileMapper;
+    private final NotificationService notificationService;
 
     @Override
     public void invite(Long companyId, InterviewDTO dto) {
@@ -62,7 +66,14 @@ public class InterviewServiceImpl implements InterviewService {
         // 更新申请状态为"已邀面试"
         application.setStatus(4);
         jobApplicationMapper.updateById(application);
-    }
+        // 通知学生收到面试邀请
+        StudentProfile student = studentProfileMapper.selectById(application.getStudentId());
+        if (student != null) {
+            notificationService.send(student.getUserId(),
+                    "收到面试邀请",
+                    "您投递的职位【" + job.getTitle() + "】已收到面试邀请，请及时确认",
+                    "interview");
+        }    }
 
     @Override
     public void respond(Long id, Long studentId, Integer status) {
@@ -84,6 +95,17 @@ public class InterviewServiceImpl implements InterviewService {
         // status: 1=接受  2=拒绝
         interview.setStatus(status);
         interviewMapper.updateById(interview);
+
+        // 通知企业学生的回应
+        JobPosition job = jobPositionMapper.selectById(application.getJobId());
+        CompanyProfile company = (job != null) ? companyProfileMapper.selectById(job.getCompanyId()) : null;
+        if (company != null) {
+            String action = (status == 1) ? "接受" : "拒绝";
+            notificationService.send(company.getUserId(),
+                    "面试邀请已" + action,
+                    "应聘者已" + action + "您发出的【" + job.getTitle() + "】面试邀请",
+                    "interview");
+        }
     }
 
     @Override
@@ -103,7 +125,19 @@ public class InterviewServiceImpl implements InterviewService {
                 jobApplicationMapper.updateById(application);
             }
         }
-    }
+        // 通知学生面试结果
+        JobApplication app = jobApplicationMapper.selectById(interview.getApplicationId());
+        if (app != null) {
+            StudentProfile student = studentProfileMapper.selectById(app.getStudentId());
+            JobPosition job = jobPositionMapper.selectById(app.getJobId());
+            if (student != null && job != null) {
+                String resultText = (result == 1) ? "通过" : "未通过";
+                notificationService.send(student.getUserId(),
+                        "面试结果通知",
+                        "您投递的职位【" + job.getTitle() + "】面试结果：" + resultText,
+                        "interview");
+            }
+        }    }
 
     @Override
     public void complete(Long id, Long companyId) {

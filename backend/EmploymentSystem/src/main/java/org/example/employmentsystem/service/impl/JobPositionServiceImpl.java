@@ -8,9 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.dto.JobPositionDTO;
 import org.example.employmentsystem.dto.JobQueryDTO;
+import org.example.employmentsystem.entity.CompanyProfile;
 import org.example.employmentsystem.entity.JobPosition;
+import org.example.employmentsystem.mapper.CompanyProfileMapper;
 import org.example.employmentsystem.mapper.JobPositionMapper;
 import org.example.employmentsystem.service.JobPositionService;
+import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
 public class JobPositionServiceImpl implements JobPositionService {
 
     private final JobPositionMapper jobPositionMapper;
+    private final CompanyProfileMapper companyProfileMapper;
+    private final NotificationService notificationService;
 
     @Override
     public void publish(Long companyId, JobPositionDTO dto) {
@@ -116,6 +121,16 @@ public class JobPositionServiceImpl implements JobPositionService {
         }
         job.setStatus(status); // 1=通过上架  3=拒绝
         jobPositionMapper.updateById(job);
+
+        // 通知企业职位审核结果
+        CompanyProfile company = companyProfileMapper.selectById(job.getCompanyId());
+        if (company != null) {
+            String statusText = (status == 1) ? "已通过并上架" : "未通过";
+            notificationService.send(company.getUserId(),
+                    "职位审核结果",
+                    "您发布的职位【" + job.getTitle() + "】审核" + statusText,
+                    "audit");
+        }
     }
 
     private void copyDtoToEntity(JobPositionDTO dto, JobPosition job) {
