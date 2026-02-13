@@ -7,11 +7,13 @@ import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.common.Result;
 import org.example.employmentsystem.dto.AuditDTO;
 import org.example.employmentsystem.entity.CompanyProfile;
+import org.example.employmentsystem.entity.JobPosition;
 import org.example.employmentsystem.service.CompanyProfileService;
+import org.example.employmentsystem.service.JobPositionService;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 管理员控制器 - 审核企业、后续扩展审核职位等
+ * 管理员控制器 - 审核企业、审核职位
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final CompanyProfileService companyProfileService;
+    private final JobPositionService jobPositionService;
 
     /**
      * 检查当前用户是否为管理员
@@ -56,5 +59,35 @@ public class AdminController {
         checkAdmin(request);
         companyProfileService.audit(id, auditDTO.getAuditStatus(), auditDTO.getAuditRemark());
         return Result.success("审核完成", null);
+    }
+
+    // ===================== 职位审核 =====================
+
+    /**
+     * 分页查询职位列表（可按状态筛选）
+     * GET /api/admin/job/list?pageNum=1&pageSize=10&status=0
+     */
+    @GetMapping("/job/list")
+    public Result<IPage<JobPosition>> getJobList(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Integer status) {
+        checkAdmin(request);
+        IPage<JobPosition> page = jobPositionService.getPage(pageNum, pageSize, status);
+        return Result.success(page);
+    }
+
+    /**
+     * 审核职位：status=1 通过上架，status=3 拒绝
+     * PUT /api/admin/job/audit/{id}
+     */
+    @PutMapping("/job/audit/{id}")
+    public Result<?> auditJob(HttpServletRequest request,
+                              @PathVariable Long id,
+                              @RequestBody AuditDTO auditDTO) {
+        checkAdmin(request);
+        jobPositionService.audit(id, auditDTO.getAuditStatus(), auditDTO.getAuditRemark());
+        return Result.success("职位审核完成", null);
     }
 }
