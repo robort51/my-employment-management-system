@@ -42,6 +42,18 @@ public class Interview {
     /** 面试反馈 */
     private String feedback;
 
+    /** 展示字段：学生姓名（非数据库字段） */
+    @TableField(exist = false)
+    private String studentName;
+
+    /** 展示字段：职位名称（非数据库字段） */
+    @TableField(exist = false)
+    private String jobTitle;
+
+    /** 展示字段：公司名称（非数据库字段） */
+    @TableField(exist = false)
+    private String companyName;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

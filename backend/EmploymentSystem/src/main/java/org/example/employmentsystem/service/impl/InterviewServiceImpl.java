@@ -17,6 +17,8 @@ import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -176,7 +178,9 @@ public class InterviewServiceImpl implements InterviewService {
         LambdaQueryWrapper<Interview> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Interview::getApplicationId, appIds)
                .orderByDesc(Interview::getCreateTime);
-        return interviewMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<Interview> page = interviewMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -206,7 +210,9 @@ public class InterviewServiceImpl implements InterviewService {
         LambdaQueryWrapper<Interview> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Interview::getApplicationId, appIds)
                .orderByDesc(Interview::getCreateTime);
-        return interviewMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<Interview> page = interviewMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     /**
@@ -226,5 +232,75 @@ public class InterviewServiceImpl implements InterviewService {
             throw new BusinessException("无权操作此面试");
         }
         return interview;
+    }
+
+    private void enrichDisplayFields(List<Interview> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+
+        Set<Long> applicationIds = records.stream()
+                .map(Interview::getApplicationId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Map<Long, JobApplication> appMap = applicationIds.isEmpty()
+                ? Map.of()
+                : jobApplicationMapper.selectBatchIds(applicationIds).stream()
+                .collect(Collectors.toMap(JobApplication::getId, a -> a, (a, b) -> a));
+
+        Set<Long> studentIds = appMap.values().stream()
+                .map(JobApplication::getStudentId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Set<Long> jobIds = appMap.values().stream()
+                .map(JobApplication::getJobId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Map<Long, StudentProfile> studentMap = studentIds.isEmpty()
+                ? Map.of()
+                : studentProfileMapper.selectBatchIds(studentIds).stream()
+                .collect(Collectors.toMap(StudentProfile::getId, s -> s, (a, b) -> a));
+
+        Map<Long, JobPosition> jobMap = jobIds.isEmpty()
+                ? Map.of()
+                : jobPositionMapper.selectBatchIds(jobIds).stream()
+                .collect(Collectors.toMap(JobPosition::getId, j -> j, (a, b) -> a));
+
+        Set<Long> companyIds = jobMap.values().stream()
+                .map(JobPosition::getCompanyId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Map<Long, CompanyProfile> companyMap = companyIds.isEmpty()
+                ? Map.of()
+                : companyProfileMapper.selectBatchIds(companyIds).stream()
+                .collect(Collectors.toMap(CompanyProfile::getId, c -> c, (a, b) -> a));
+
+        records.forEach(interview -> {
+            JobApplication app = appMap.get(interview.getApplicationId());
+            if (app == null) {
+                interview.setStudentName("");
+                interview.setJobTitle("");
+                interview.setCompanyName("");
+                return;
+            }
+
+            StudentProfile student = studentMap.get(app.getStudentId());
+            interview.setStudentName(student != null && student.getRealName() != null ? student.getRealName() : "");
+
+            JobPosition job = jobMap.get(app.getJobId());
+            if (job == null) {
+                interview.setJobTitle("");
+                interview.setCompanyName("");
+                return;
+            }
+
+            interview.setJobTitle(job.getTitle());
+            CompanyProfile company = companyMap.get(job.getCompanyId());
+            interview.setCompanyName(company != null ? company.getCompanyName() : "");
+        });
     }
 }

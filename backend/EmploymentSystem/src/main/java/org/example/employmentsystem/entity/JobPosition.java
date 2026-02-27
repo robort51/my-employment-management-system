@@ -45,6 +45,22 @@ public class JobPosition {
     /** 状态：0-待审核 1-已上架 2-已下架 3-审核拒绝 */
     private Integer status;
 
+    /** 展示字段：公司名称（非数据库字段） */
+    @TableField(exist = false)
+    private String companyName;
+
+    /** 展示字段：薪资文本（非数据库字段） */
+    @TableField(exist = false)
+    private String salary;
+
+    /** 展示字段：学历要求别名（非数据库字段） */
+    @TableField(exist = false)
+    private String education;
+
+    /** 展示字段：审核状态别名（非数据库字段） */
+    @TableField(exist = false)
+    private Integer auditStatus;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

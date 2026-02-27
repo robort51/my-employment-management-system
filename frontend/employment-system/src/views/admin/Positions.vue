@@ -5,20 +5,22 @@
       <el-table-column prop="title" label="职位名称" width="180" />
       <el-table-column prop="companyName" label="发布企业" width="160" />
       <el-table-column prop="city" label="城市" width="100" />
-      <el-table-column prop="salary" label="薪资" width="120" />
-      <el-table-column prop="education" label="学历要求" width="100" />
+      <el-table-column label="薪资" width="150">
+        <template #default="{ row }">{{ formatSalary(row) }}</template>
+      </el-table-column>
+      <el-table-column prop="educationReq" label="学历要求" width="100" />
       <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column prop="auditStatus" label="状态" width="100">
+      <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="{ 0:'warning',1:'success',2:'danger' }[row.auditStatus]">
-            {{ { 0:'待审核',1:'已通过',2:'未通过' }[row.auditStatus] }}
+          <el-tag :type="{ 0:'warning',1:'success',2:'info',3:'danger' }[row.status]">
+            {{ { 0:'待审核',1:'已上架',2:'已下架',3:'未通过' }[row.status] }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
-          <el-button v-if="row.auditStatus === 0" size="small" type="success" @click="handleAudit(row, 1)">通过</el-button>
-          <el-button v-if="row.auditStatus === 0" size="small" type="danger" @click="handleAudit(row, 2)">拒绝</el-button>
+          <el-button v-if="row.status === 0" size="small" type="success" @click="handleAudit(row, 1)">通过</el-button>
+          <el-button v-if="row.status === 0" size="small" type="danger" @click="handleAudit(row, 3)">拒绝</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -53,6 +55,13 @@ const handleAudit = async (row, status) => {
     ElMessage.success('操作成功')
     loadData()
   } catch (e) {}
+}
+
+const formatSalary = (row) => {
+  if (row.salaryMin != null && row.salaryMax != null) return `${row.salaryMin}-${row.salaryMax}`
+  if (row.salaryMin != null) return `${row.salaryMin}+`
+  if (row.salaryMax != null) return `0-${row.salaryMax}`
+  return '-'
 }
 
 onMounted(loadData)

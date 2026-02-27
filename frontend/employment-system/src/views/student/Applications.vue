@@ -9,7 +9,7 @@
           <el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="投递时间" width="180" />
+      <el-table-column prop="applyTime" label="投递时间" width="180" />
       <el-table-column prop="remark" label="备注" show-overflow-tooltip />
     </el-table>
     <el-pagination style="margin-top:16px;justify-content:center" background layout="prev, pager, next" :total="total" :page-size="10" v-model:current-page="currentPage" @current-change="loadData" />
@@ -25,8 +25,8 @@ const loading = ref(false)
 const currentPage = ref(1)
 const total = ref(0)
 
-const statusText = (s) => ({ 0: '待查看', 1: '已查看', 2: '通过', 3: '不合适' }[s] || '未知')
-const statusType = (s) => ({ 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }[s] || 'info')
+const statusText = (s) => ({ 0: '待查看', 1: '已查看', 2: '通过筛选', 3: '不合适', 4: '已邀面试', 5: '已录用' }[s] || '未知')
+const statusType = (s) => ({ 0: 'info', 1: 'warning', 2: 'success', 3: 'danger', 4: 'warning', 5: 'success' }[s] || 'info')
 
 const loadData = async () => {
   loading.value = true

@@ -18,7 +18,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import { aiCareerGenerate, aiCareerRecords } from '../../api'
 
 const loading = ref(false)
@@ -29,7 +28,7 @@ const handleGenerate = async () => {
   loading.value = true
   try {
     const res = await aiCareerGenerate()
-    result.value = res.data
+    result.value = res.data?.planContent || ''
     loadRecords()
   } finally {
     loading.value = false

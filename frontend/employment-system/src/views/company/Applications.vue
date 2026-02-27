@@ -6,12 +6,12 @@
       <el-table-column prop="jobTitle" label="应聘职位" width="180" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="{ 0:'info',1:'warning',2:'success',3:'danger' }[row.status]">
-            {{ { 0:'待查看',1:'已查看',2:'通过',3:'不合适' }[row.status] }}
+          <el-tag :type="{ 0:'info',1:'warning',2:'success',3:'danger',4:'warning',5:'success' }[row.status]">
+            {{ { 0:'待查看',1:'已查看',2:'通过筛选',3:'不合适',4:'已邀面试',5:'已录用' }[row.status] }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="投递时间" width="180" />
+      <el-table-column prop="applyTime" label="投递时间" width="180" />
       <el-table-column label="操作" width="280" fixed="right">
         <template #default="{ row }">
           <el-button size="small" link type="primary" @click="viewResume(row)">查看简历</el-button>
@@ -110,6 +110,7 @@ const handleSendInterview = async () => {
     })
     ElMessage.success('面试邀请已发送')
     interviewVisible.value = false
+    loadData()
   } finally {
     sendingInterview.value = false
   }

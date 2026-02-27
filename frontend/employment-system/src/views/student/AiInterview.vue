@@ -79,10 +79,16 @@ const handleStart = async () => {
     const res = await aiInterviewStart({ jobTitle: jobTitle.value })
     const data = res.data
     recordId.value = data.id
-    // 从qaContent解析题目（每行一个问题）
-    const lines = (data.qaContent || '').split('\n').filter(l => l.trim())
-    questions.value = lines
-    answers.value = new Array(lines.length).fill('')
+    let parsedQuestions = []
+    try {
+      const arr = JSON.parse(data.qaContent || '[]')
+      parsedQuestions = Array.isArray(arr) ? arr.map(item => item.question).filter(Boolean) : []
+    } catch (e) {}
+    if (parsedQuestions.length === 0) {
+      parsedQuestions = (data.qaContent || '').split('\n').filter(l => l.trim())
+    }
+    questions.value = parsedQuestions
+    answers.value = new Array(parsedQuestions.length).fill('')
     step.value = 'answering'
   } finally {
     loading.value = false
@@ -93,7 +99,7 @@ const handleSubmit = async () => {
   if (answers.value.some(a => !a.trim())) return ElMessage.warning('请回答所有问题')
   submitting.value = true
   try {
-    const res = await aiInterviewSubmit({ recordId: recordId.value, answers: answers.value })
+    const res = await aiInterviewSubmit({ recordId: recordId.value, answers: JSON.stringify(answers.value) })
     feedback.value = res.data.feedback || res.data.aiFeedback || ''
     score.value = res.data.score || 0
     step.value = 'result'

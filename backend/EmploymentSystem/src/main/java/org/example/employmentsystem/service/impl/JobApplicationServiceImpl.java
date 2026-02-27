@@ -1,5 +1,6 @@
 package org.example.employmentsystem.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,14 +9,23 @@ import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.entity.CompanyProfile;
 import org.example.employmentsystem.entity.JobApplication;
 import org.example.employmentsystem.entity.JobPosition;
+import org.example.employmentsystem.entity.Resume;
 import org.example.employmentsystem.entity.StudentProfile;
+import org.example.employmentsystem.entity.SysUser;
 import org.example.employmentsystem.mapper.CompanyProfileMapper;
 import org.example.employmentsystem.mapper.JobApplicationMapper;
 import org.example.employmentsystem.mapper.JobPositionMapper;
+import org.example.employmentsystem.mapper.ResumeMapper;
 import org.example.employmentsystem.mapper.StudentProfileMapper;
+import org.example.employmentsystem.mapper.SysUserMapper;
 import org.example.employmentsystem.service.JobApplicationService;
 import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 求职申请 Service 实现类
@@ -28,6 +38,8 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final JobPositionMapper jobPositionMapper;
     private final CompanyProfileMapper companyProfileMapper;
     private final StudentProfileMapper studentProfileMapper;
+    private final ResumeMapper resumeMapper;
+    private final SysUserMapper sysUserMapper;
     private final NotificationService notificationService;
 
     @Override
@@ -67,7 +79,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         LambdaQueryWrapper<JobApplication> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(JobApplication::getStudentId, studentId)
                .orderByDesc(JobApplication::getApplyTime);
-        return jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<JobApplication> page = jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -75,7 +89,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         LambdaQueryWrapper<JobApplication> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(JobApplication::getJobId, jobId)
                .orderByDesc(JobApplication::getApplyTime);
-        return jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<JobApplication> page = jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -92,7 +108,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         LambdaQueryWrapper<JobApplication> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(JobApplication::getJobId, jobIds)
                .orderByDesc(JobApplication::getApplyTime);
-        return jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<JobApplication> page = jobApplicationMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -132,5 +150,85 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public JobApplication getById(Long id) {
         return jobApplicationMapper.selectById(id);
+    }
+
+    private void enrichDisplayFields(List<JobApplication> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+
+        Set<Long> studentIds = records.stream()
+                .map(JobApplication::getStudentId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Set<Long> jobIds = records.stream()
+                .map(JobApplication::getJobId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Map<Long, StudentProfile> studentMap = studentIds.isEmpty()
+                ? Map.of()
+                : studentProfileMapper.selectBatchIds(studentIds).stream()
+                .collect(Collectors.toMap(StudentProfile::getId, p -> p, (a, b) -> a));
+
+        Map<Long, SysUser> userMap = studentMap.values().stream()
+                .map(StudentProfile::getUserId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.collectingAndThen(Collectors.toSet(), ids -> {
+                    if (ids.isEmpty()) {
+                        return Map.<Long, SysUser>of();
+                    }
+                    return sysUserMapper.selectBatchIds(ids).stream()
+                            .collect(Collectors.toMap(SysUser::getId, u -> u, (a, b) -> a));
+                }));
+
+        Map<Long, Resume> resumeMap = studentIds.isEmpty()
+                ? Map.of()
+                : resumeMapper.selectList(new LambdaQueryWrapper<Resume>()
+                .in(Resume::getStudentId, studentIds)).stream()
+                .collect(Collectors.toMap(Resume::getStudentId, r -> r, (a, b) -> a));
+
+        Map<Long, JobPosition> jobMap = jobIds.isEmpty()
+                ? Map.of()
+                : jobPositionMapper.selectBatchIds(jobIds).stream()
+                .collect(Collectors.toMap(JobPosition::getId, j -> j, (a, b) -> a));
+
+        Set<Long> companyIds = jobMap.values().stream()
+                .map(JobPosition::getCompanyId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Map<Long, CompanyProfile> companyMap = companyIds.isEmpty()
+                ? Map.of()
+                : companyProfileMapper.selectBatchIds(companyIds).stream()
+                .collect(Collectors.toMap(CompanyProfile::getId, c -> c, (a, b) -> a));
+
+        records.forEach(app -> {
+            StudentProfile student = studentMap.get(app.getStudentId());
+            if (student != null) {
+                String realName = student.getRealName();
+                if (StrUtil.isBlank(realName)) {
+                    SysUser user = userMap.get(student.getUserId());
+                    realName = user != null ? user.getUsername() : "";
+                }
+                app.setStudentName(realName);
+                Resume resume = resumeMap.get(student.getId());
+                app.setResumeContent(resume != null ? resume.getContent() : "");
+            } else {
+                app.setStudentName("");
+                app.setResumeContent("");
+            }
+
+            JobPosition job = jobMap.get(app.getJobId());
+            if (job != null) {
+                app.setJobTitle(job.getTitle());
+                CompanyProfile company = companyMap.get(job.getCompanyId());
+                app.setCompanyName(company != null ? company.getCompanyName() : "");
+            } else {
+                app.setJobTitle("");
+                app.setCompanyName("");
+            }
+        });
     }
 }

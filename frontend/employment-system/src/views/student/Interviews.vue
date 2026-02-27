@@ -13,7 +13,7 @@
       </el-table-column>
       <el-table-column prop="result" label="面试结果" width="120">
         <template #default="{ row }">
-          <el-tag v-if="row.result" :type="row.result === 'pass' ? 'success' : 'danger'">{{ row.result === 'pass' ? '通过' : '未通过' }}</el-tag>
+          <el-tag v-if="row.result" :type="row.result === 1 ? 'success' : 'danger'">{{ row.result === 1 ? '通过' : '未通过' }}</el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>

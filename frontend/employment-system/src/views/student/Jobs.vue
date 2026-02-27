@@ -12,8 +12,10 @@
       <el-table-column prop="title" label="职位名称" width="180" />
       <el-table-column prop="companyName" label="公司名称" width="160" />
       <el-table-column prop="city" label="城市" width="100" />
-      <el-table-column prop="salary" label="薪资" width="120" />
-      <el-table-column prop="education" label="学历要求" width="100" />
+      <el-table-column label="薪资" width="150">
+        <template #default="{ row }">{{ formatSalary(row) }}</template>
+      </el-table-column>
+      <el-table-column prop="educationReq" label="学历要求" width="100" />
       <el-table-column prop="description" label="职位描述" show-overflow-tooltip />
       <el-table-column label="操作" width="100" fixed="right">
         <template #default="{ row }">
@@ -54,6 +56,14 @@ const handleApply = async (row) => {
     await applyJob(row.id)
     ElMessage.success('投递成功')
   } catch (e) {}
+}
+
+const formatSalary = (row) => {
+  if (row.salary) return row.salary
+  if (row.salaryMin != null && row.salaryMax != null) return `${row.salaryMin}-${row.salaryMax}`
+  if (row.salaryMin != null) return `${row.salaryMin}+`
+  if (row.salaryMax != null) return `0-${row.salaryMax}`
+  return '-'
 }
 
 onMounted(loadData)

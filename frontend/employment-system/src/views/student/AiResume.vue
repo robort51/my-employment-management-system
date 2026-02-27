@@ -39,7 +39,7 @@ const handlePolish = async () => {
   loading.value = true
   try {
     const res = await aiResumePolish({ content: content.value })
-    result.value = res.data
+    result.value = res.data?.polishedContent || ''
     loadRecords()
   } finally {
     loading.value = false

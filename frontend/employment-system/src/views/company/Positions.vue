@@ -9,12 +9,14 @@
     <el-table :data="list" v-loading="loading" stripe>
       <el-table-column prop="title" label="职位名称" width="180" />
       <el-table-column prop="city" label="城市" width="100" />
-      <el-table-column prop="salary" label="薪资" width="120" />
-      <el-table-column prop="education" label="学历要求" width="100" />
-      <el-table-column prop="auditStatus" label="审核状态" width="100">
+      <el-table-column label="薪资" width="150">
+        <template #default="{ row }">{{ formatSalary(row) }}</template>
+      </el-table-column>
+      <el-table-column prop="educationReq" label="学历要求" width="100" />
+      <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="{ 0:'warning',1:'success',2:'danger' }[row.auditStatus]">
-            {{ { 0:'待审核',1:'已通过',2:'未通过' }[row.auditStatus] }}
+          <el-tag :type="{ 0:'warning',1:'success',2:'info',3:'danger' }[row.status]">
+            {{ { 0:'待审核',1:'已上架',2:'已下架',3:'未通过' }[row.status] }}
           </el-tag>
         </template>
       </el-table-column>
@@ -32,9 +34,10 @@
       <el-form :model="form" label-width="90px">
         <el-form-item label="职位名称"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="城市"><el-input v-model="form.city" /></el-form-item>
-        <el-form-item label="薪资"><el-input v-model="form.salary" placeholder="如: 8k-15k" /></el-form-item>
+        <el-form-item label="最低薪资"><el-input-number v-model="form.salaryMin" :min="0" :controls="false" style="width:100%" /></el-form-item>
+        <el-form-item label="最高薪资"><el-input-number v-model="form.salaryMax" :min="0" :controls="false" style="width:100%" /></el-form-item>
         <el-form-item label="学历要求">
-          <el-select v-model="form.education">
+          <el-select v-model="form.educationReq">
             <el-option label="不限" value="不限" />
             <el-option label="大专" value="大专" />
             <el-option label="本科" value="本科" />
@@ -42,7 +45,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="职位描述"><el-input v-model="form.description" type="textarea" :rows="4" /></el-form-item>
-        <el-form-item label="任职要求"><el-input v-model="form.requirement" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="经验要求"><el-input v-model="form.experienceReq" type="textarea" :rows="3" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -65,16 +68,40 @@ const total = ref(0)
 const dialogVisible = ref(false)
 const editId = ref(null)
 
-const form = reactive({ title: '', city: '', salary: '', education: '', description: '', requirement: '' })
+const form = reactive({
+  title: '',
+  city: '',
+  salaryMin: null,
+  salaryMax: null,
+  educationReq: '',
+  description: '',
+  experienceReq: ''
+})
 
 const resetForm = () => {
-  Object.assign(form, { title: '', city: '', salary: '', education: '', description: '', requirement: '' })
+  Object.assign(form, {
+    title: '',
+    city: '',
+    salaryMin: null,
+    salaryMax: null,
+    educationReq: '',
+    description: '',
+    experienceReq: ''
+  })
   editId.value = null
 }
 
 const openDialog = (row) => {
   if (row) {
-    Object.assign(form, row)
+    Object.assign(form, {
+      title: row.title || '',
+      city: row.city || '',
+      salaryMin: row.salaryMin ?? null,
+      salaryMax: row.salaryMax ?? null,
+      educationReq: row.educationReq || '',
+      description: row.description || '',
+      experienceReq: row.experienceReq || ''
+    })
     editId.value = row.id
   } else {
     resetForm()
@@ -94,6 +121,10 @@ const loadData = async () => {
 }
 
 const handleSave = async () => {
+  if (form.salaryMin != null && form.salaryMax != null && form.salaryMin > form.salaryMax) {
+    ElMessage.warning('最低薪资不能大于最高薪资')
+    return
+  }
   saving.value = true
   try {
     if (editId.value) {
@@ -116,6 +147,13 @@ const handleDelete = async (row) => {
     ElMessage.success('已下架')
     loadData()
   } catch (e) {}
+}
+
+const formatSalary = (row) => {
+  if (row.salaryMin != null && row.salaryMax != null) return `${row.salaryMin}-${row.salaryMax}`
+  if (row.salaryMin != null) return `${row.salaryMin}+`
+  if (row.salaryMax != null) return `0-${row.salaryMax}`
+  return '-'
 }
 
 onMounted(loadData)

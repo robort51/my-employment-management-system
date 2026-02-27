@@ -30,6 +30,22 @@ public class JobApplication {
     /** 投递时间 */
     private LocalDateTime applyTime;
 
+    /** 展示字段：学生姓名（非数据库字段） */
+    @TableField(exist = false)
+    private String studentName;
+
+    /** 展示字段：职位名称（非数据库字段） */
+    @TableField(exist = false)
+    private String jobTitle;
+
+    /** 展示字段：公司名称（非数据库字段） */
+    @TableField(exist = false)
+    private String companyName;
+
+    /** 展示字段：简历内容（非数据库字段） */
+    @TableField(exist = false)
+    private String resumeContent;
+
     private LocalDateTime updateTime;
 
     @TableLogic

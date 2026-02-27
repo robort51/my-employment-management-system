@@ -15,8 +15,8 @@
       </el-table-column>
       <el-table-column prop="result" label="面试结果" width="100">
         <template #default="{ row }">
-          <el-tag v-if="row.result" :type="row.result === 'pass' ? 'success' : 'danger'">
-            {{ row.result === 'pass' ? '通过' : '未通过' }}
+          <el-tag v-if="row.result" :type="row.result === 1 ? 'success' : 'danger'">
+            {{ row.result === 1 ? '通过' : '未通过' }}
           </el-tag>
           <span v-else>-</span>
         </template>
@@ -24,8 +24,8 @@
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <template v-if="row.status === 1 && !row.result">
-            <el-button size="small" type="success" @click="handleResult(row, 'pass')">通过</el-button>
-            <el-button size="small" type="danger" @click="handleResult(row, 'fail')">未通过</el-button>
+            <el-button size="small" type="success" @click="handleResult(row, 1)">通过</el-button>
+            <el-button size="small" type="danger" @click="handleResult(row, 2)">未通过</el-button>
           </template>
           <span v-else>-</span>
         </template>

@@ -16,6 +16,11 @@ import org.example.employmentsystem.service.JobPositionService;
 import org.example.employmentsystem.service.NotificationService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * 职位 Service 实现类
  */
@@ -70,7 +75,9 @@ public class JobPositionServiceImpl implements JobPositionService {
         LambdaQueryWrapper<JobPosition> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(JobPosition::getCompanyId, companyId);
         wrapper.orderByDesc(JobPosition::getCreateTime);
-        return jobPositionMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<JobPosition> page = jobPositionMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -99,8 +106,10 @@ public class JobPositionServiceImpl implements JobPositionService {
         }
 
         wrapper.orderByDesc(JobPosition::getCreateTime);
-        return jobPositionMapper.selectPage(
+        IPage<JobPosition> page = jobPositionMapper.selectPage(
                 new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -110,7 +119,9 @@ public class JobPositionServiceImpl implements JobPositionService {
             wrapper.eq(JobPosition::getStatus, status);
         }
         wrapper.orderByDesc(JobPosition::getCreateTime);
-        return jobPositionMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<JobPosition> page = jobPositionMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        enrichDisplayFields(page.getRecords());
+        return page;
     }
 
     @Override
@@ -142,5 +153,52 @@ public class JobPositionServiceImpl implements JobPositionService {
         job.setEducationReq(dto.getEducationReq());
         job.setExperienceReq(dto.getExperienceReq());
         job.setDescription(dto.getDescription());
+    }
+
+    private void enrichDisplayFields(List<JobPosition> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+
+        Set<Long> companyIds = records.stream()
+                .map(JobPosition::getCompanyId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+
+        Map<Long, String> companyNameMap = companyIds.isEmpty()
+                ? Map.of()
+                : companyProfileMapper.selectBatchIds(companyIds).stream()
+                .collect(Collectors.toMap(CompanyProfile::getId, CompanyProfile::getCompanyName, (a, b) -> a));
+
+        records.forEach(job -> {
+            job.setCompanyName(companyNameMap.getOrDefault(job.getCompanyId(), ""));
+            job.setSalary(buildSalaryText(job.getSalaryMin(), job.getSalaryMax()));
+            job.setEducation(job.getEducationReq());
+            job.setAuditStatus(mapAuditStatus(job.getStatus()));
+        });
+    }
+
+    private String buildSalaryText(Integer min, Integer max) {
+        if (min != null && max != null) {
+            return min + "-" + max;
+        }
+        if (min != null) {
+            return min + "+";
+        }
+        if (max != null) {
+            return "0-" + max;
+        }
+        return "";
+    }
+
+    private Integer mapAuditStatus(Integer status) {
+        if (status == null) {
+            return null;
+        }
+        return switch (status) {
+            case 0, 1, 2 -> status;
+            case 3 -> 2;
+            default -> status;
+        };
     }
 }
