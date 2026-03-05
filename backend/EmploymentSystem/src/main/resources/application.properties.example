@@ -29,3 +29,9 @@ spring.jackson.time-zone=Asia/Shanghai
 ai.deepseek.api-key=你的DeepSeek API Key
 ai.deepseek.base-url=https://api.deepseek.com/v1/chat/completions
 ai.deepseek.model=deepseek-chat
+
+# ===== 阿里云 OCR 配置 =====
+aliyun.ocr.access-key-id=你的AK
+aliyun.ocr.access-key-secret=你的SK
+aliyun.ocr.endpoint=ocr-api.cn-hangzhou.aliyuncs.com
+aliyun.ocr.type=Advanced

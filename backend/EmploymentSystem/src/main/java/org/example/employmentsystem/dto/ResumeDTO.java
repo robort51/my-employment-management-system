@@ -10,4 +10,10 @@ public class ResumeDTO {
 
     /** 简历内容（富文本/纯文本） */
     private String content;
+
+    /** 简历图片 URL */
+    private String imageUrl;
+
+    /** OCR 识别文本 */
+    private String ocrText;
 }

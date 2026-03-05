@@ -214,7 +214,14 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 }
                 app.setStudentName(realName);
                 Resume resume = resumeMap.get(student.getId());
-                app.setResumeContent(resume != null ? resume.getContent() : "");
+                if (resume != null) {
+                    String resumeContent = (resume.getOcrText() != null && !resume.getOcrText().isBlank())
+                            ? resume.getOcrText()
+                            : resume.getContent();
+                    app.setResumeContent(resumeContent);
+                } else {
+                    app.setResumeContent("");
+                }
             } else {
                 app.setStudentName("");
                 app.setResumeContent("");

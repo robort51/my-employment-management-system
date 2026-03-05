@@ -15,6 +15,10 @@ export const saveCompanyProfile = (data) => request.post('/company/profile', dat
 // ===================== 简历 =====================
 export const getResume = () => request.get('/resume')
 export const saveResume = (data) => request.post('/resume', data)
+export const uploadResumeImage = (formData) =>
+  request.post('/resume/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 
 // ===================== 职位 =====================
 export const getJobList = (params) => request.get('/job/search', { params })
@@ -45,6 +49,7 @@ export const markAllRead = () => request.put('/notification/read-all')
 
 // ===================== AI功能 =====================
 export const aiResumePolish = (data) => request.post('/ai/resume/polish', data)
+export const aiResumePolishByResume = () => request.post('/ai/resume/polish-by-resume')
 export const aiResumeRecords = (params) => request.get('/ai/resume/records', { params })
 export const aiInterviewStart = (data) => request.post('/ai/interview/start', data)
 export const aiInterviewSubmit = (data) => request.post('/ai/interview/submit', data)

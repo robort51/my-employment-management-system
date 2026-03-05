@@ -21,6 +21,12 @@ public class Resume {
     /** 简历内容（富文本/纯文本） */
     private String content;
 
+    /** 简历图片 URL */
+    private String imageUrl;
+
+    /** OCR 识别结果（供 AI 使用） */
+    private String ocrText;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

@@ -103,7 +103,9 @@ DROP TABLE IF EXISTS resume;
 CREATE TABLE resume (
     id          BIGINT   NOT NULL AUTO_INCREMENT COMMENT '简历ID',
     student_id  BIGINT   NOT NULL COMMENT '关联学生档案ID',
-    content     TEXT     DEFAULT NULL COMMENT '简历内容（富文本/纯文本）',
+    content     TEXT     DEFAULT NULL COMMENT '简历内容（兼容字段）',
+    image_url   VARCHAR(255) DEFAULT NULL COMMENT '简历图片URL',
+    ocr_text    TEXT     DEFAULT NULL COMMENT 'OCR识别文本',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted     TINYINT  NOT NULL DEFAULT 0 COMMENT '逻辑删除',

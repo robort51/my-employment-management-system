@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.entity.AiResumeRecord;
+import org.example.employmentsystem.entity.Resume;
 import org.example.employmentsystem.mapper.AiResumeRecordMapper;
+import org.example.employmentsystem.mapper.ResumeMapper;
 import org.example.employmentsystem.service.AiResumeService;
 import org.example.employmentsystem.service.AiService;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 public class AiResumeServiceImpl implements AiResumeService {
 
     private final AiResumeRecordMapper aiResumeRecordMapper;
+    private final ResumeMapper resumeMapper;
     private final AiService aiService;
 
     private static final String SYSTEM_PROMPT = """
@@ -45,6 +49,25 @@ public class AiResumeServiceImpl implements AiResumeService {
         aiResumeRecordMapper.insert(record);
 
         return record;
+    }
+
+    @Override
+    public AiResumeRecord polishByResume(Long studentId) {
+        LambdaQueryWrapper<Resume> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Resume::getStudentId, studentId);
+        Resume resume = resumeMapper.selectOne(wrapper);
+        if (resume == null) {
+            throw new BusinessException("请先上传简历图片");
+        }
+
+        String sourceText = resume.getOcrText();
+        if (sourceText == null || sourceText.isBlank()) {
+            sourceText = resume.getContent();
+        }
+        if (sourceText == null || sourceText.isBlank()) {
+            throw new BusinessException("未识别到简历文字，请重新上传更清晰的简历图片");
+        }
+        return polish(studentId, sourceText);
     }
 
     @Override

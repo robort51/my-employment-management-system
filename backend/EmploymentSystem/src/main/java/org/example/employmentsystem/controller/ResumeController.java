@@ -10,6 +10,7 @@ import org.example.employmentsystem.entity.StudentProfile;
 import org.example.employmentsystem.service.ResumeService;
 import org.example.employmentsystem.service.StudentProfileService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 简历控制器（一人一份简历）
@@ -55,6 +56,18 @@ public class ResumeController {
         Long studentId = getStudentId(request);
         resumeService.saveOrUpdate(studentId, dto);
         return Result.success("简历保存成功", null);
+    }
+
+    /**
+     * 上传简历图片并 OCR 识别
+     * POST /api/resume/upload-image
+     */
+    @PostMapping("/upload-image")
+    public Result<Resume> uploadImage(HttpServletRequest request,
+                                      @RequestParam("file") MultipartFile file) {
+        Long studentId = getStudentId(request);
+        Resume resume = resumeService.uploadImageAndRecognize(studentId, file);
+        return Result.success("上传并识别成功", resume);
     }
 
     /**

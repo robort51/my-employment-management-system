@@ -72,6 +72,13 @@
             <version>5.8.32</version>
         </dependency>
 
+        <!-- 阿里云 OCR SDK -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>ocr_api20210707</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

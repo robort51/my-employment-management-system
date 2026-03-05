@@ -63,6 +63,17 @@ public class AiController {
     }
 
     /**
+     * 基于已上传简历图片识别文本进行 AI 润色
+     * POST /api/ai/resume/polish-by-resume
+     */
+    @PostMapping("/resume/polish-by-resume")
+    public Result<AiResumeRecord> polishByResume(HttpServletRequest request) {
+        Long studentId = getStudentId(request);
+        AiResumeRecord record = aiResumeService.polishByResume(studentId);
+        return Result.success(record);
+    }
+
+    /**
      * 查看简历润色历史记录
      * GET /api/ai/resume/records?pageNum=1&pageSize=10
      */
