@@ -77,6 +77,13 @@ public class ResumeServiceImpl implements ResumeService {
             throw new BusinessException("仅支持 jpg/jpeg/png/webp/bmp 格式图片");
         }
 
+        byte[] imageBytes;
+        try {
+            imageBytes = file.getBytes();
+        } catch (IOException e) {
+            throw new BusinessException("读取上传图片失败，请重试");
+        }
+
         String filename = UUID.randomUUID().toString().replace("-", "") + suffix;
         File dir = new File(uploadDir);
         if (!dir.exists() && !dir.mkdirs()) {
@@ -85,8 +92,9 @@ public class ResumeServiceImpl implements ResumeService {
         File dest = new File(dir, filename);
 
         try {
+            // 先 OCR，再落盘，避免 transferTo 后临时文件不可重复读取
+            String ocrText = ocrService.recognizeText(imageBytes);
             file.transferTo(dest);
-            String ocrText = ocrService.recognizeText(file.getBytes());
             String imageUrl = "/uploads/" + filename;
 
             Resume resume = getByStudentId(studentId);
@@ -104,6 +112,8 @@ public class ResumeServiceImpl implements ResumeService {
                 resumeMapper.updateById(resume);
             }
             return resume;
+        } catch (BusinessException e) {
+            throw e;
         } catch (IOException e) {
             throw new BusinessException("上传或识别失败，请稍后重试");
         }
