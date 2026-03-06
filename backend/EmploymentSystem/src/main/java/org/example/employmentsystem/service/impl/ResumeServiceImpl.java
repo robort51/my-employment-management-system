@@ -1,6 +1,7 @@
 package org.example.employmentsystem.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.example.employmentsystem.common.BusinessException;
 import org.example.employmentsystem.dto.ResumeDTO;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ import java.util.UUID;
  * 简历 Service 实现类（一人一份简历）
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ResumeServiceImpl implements ResumeService {
 
@@ -32,9 +35,17 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Override
     public Resume getByStudentId(Long studentId) {
-        LambdaQueryWrapper<Resume> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Resume::getStudentId, studentId);
-        return resumeMapper.selectOne(wrapper);
+        try {
+            LambdaQueryWrapper<Resume> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Resume::getStudentId, studentId);
+            return resumeMapper.selectOne(wrapper);
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("Unknown column")) {
+                throw new BusinessException("数据库缺少 resume 新字段，请执行 sql/migration_20260305_resume_image_ocr.sql 后重启后端");
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -94,7 +105,7 @@ public class ResumeServiceImpl implements ResumeService {
         try {
             // 先 OCR，再落盘，避免 transferTo 后临时文件不可重复读取
             String ocrText = ocrService.recognizeText(imageBytes);
-            file.transferTo(dest);
+            Files.write(dest.toPath(), imageBytes);
             String imageUrl = "/uploads/" + filename;
 
             Resume resume = getByStudentId(studentId);
@@ -115,7 +126,8 @@ public class ResumeServiceImpl implements ResumeService {
         } catch (BusinessException e) {
             throw e;
         } catch (IOException e) {
-            throw new BusinessException("上传或识别失败，请稍后重试");
+            log.error("简历图片落盘失败: path={}", dest.getAbsolutePath(), e);
+            throw new BusinessException("上传或识别失败: " + e.getMessage());
         }
     }
 

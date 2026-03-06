@@ -26,6 +26,9 @@ public class AiServiceImpl implements AiService {
     @Value("${ai.deepseek.model}")
     private String model;
 
+    @Value("${ai.deepseek.timeout-ms:120000}")
+    private Integer timeoutMs;
+
     @Override
     public String chat(String systemPrompt, String userMessage) {
         if ("your-api-key-here".equals(apiKey)) {
@@ -58,7 +61,7 @@ public class AiServiceImpl implements AiService {
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .body(requestBody.toString())
-                    .timeout(60000) // 60秒超时
+                    .timeout(timeoutMs) // 可配置超时
                     .execute()
                     .body();
 

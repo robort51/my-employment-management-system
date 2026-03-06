@@ -20,17 +20,28 @@
 
     <div v-if="resume.imageUrl" style="margin-top: 20px">
       <h4 style="margin-bottom: 8px">已上传图片</h4>
-      <el-image
-        :src="previewUrl"
-        fit="contain"
-        style="width: 100%; max-width: 680px; border: 1px solid #ebeef5; border-radius: 8px"
-      />
+      <div style="display: flex; align-items: center; gap: 12px">
+        <el-tag type="info">{{ fileName }}</el-tag>
+        <el-button size="small" type="primary" @click="handlePreview">预览</el-button>
+      </div>
     </div>
 
     <div style="margin-top: 20px">
       <h4 style="margin-bottom: 8px">OCR识别文本（AI润色将基于此内容）</h4>
       <el-input v-model="resume.ocrText" type="textarea" :rows="14" readonly />
     </div>
+
+    <el-dialog v-model="previewVisible" title="简历图片预览" width="780px">
+      <el-image
+        v-if="previewUrl"
+        :src="previewUrl"
+        fit="contain"
+        style="width: 100%; max-height: 70vh; border: 1px solid #ebeef5; border-radius: 8px"
+      />
+      <template #footer>
+        <el-button @click="previewVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -44,14 +55,20 @@ const resume = reactive({
   imageUrl: '',
   ocrText: ''
 })
+const previewVisible = ref(false)
 
 const previewUrl = computed(() => {
   if (!resume.imageUrl) return ''
   if (resume.imageUrl.startsWith('http://') || resume.imageUrl.startsWith('https://')) {
     return resume.imageUrl
   }
-  return resume.imageUrl
+  const normalized = resume.imageUrl.startsWith('/') ? resume.imageUrl : `/${resume.imageUrl}`
+  if (import.meta.env.DEV) {
+    return `${window.location.protocol}//${window.location.hostname}:8080${normalized}`
+  }
+  return normalized
 })
+const fileName = computed(() => (resume.imageUrl ? resume.imageUrl.split('/').pop() || '简历图片' : ''))
 
 const loadResume = async () => {
   try {
@@ -92,6 +109,13 @@ const handleUpload = async ({ file }) => {
   }
 }
 
+const handlePreview = () => {
+  if (!previewUrl.value) {
+    ElMessage.warning('暂无可预览图片')
+    return
+  }
+  previewVisible.value = true
+}
+
 onMounted(loadResume)
 </script>
-

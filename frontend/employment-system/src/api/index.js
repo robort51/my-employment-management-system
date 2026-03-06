@@ -49,7 +49,8 @@ export const markAllRead = () => request.put('/notification/read-all')
 
 // ===================== AI功能 =====================
 export const aiResumePolish = (data) => request.post('/ai/resume/polish', data)
-export const aiResumePolishByResume = () => request.post('/ai/resume/polish-by-resume')
+export const aiResumePolishByResume = () =>
+  request.post('/ai/resume/polish-by-resume', null, { timeout: 120000 })
 export const aiResumeRecords = (params) => request.get('/ai/resume/records', { params })
 export const aiInterviewStart = (data) => request.post('/ai/interview/start', data)
 export const aiInterviewSubmit = (data) => request.post('/ai/interview/submit', data)

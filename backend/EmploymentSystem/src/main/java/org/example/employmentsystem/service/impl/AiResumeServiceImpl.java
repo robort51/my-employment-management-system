@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AiResumeServiceImpl implements AiResumeService {
 
+    private static final int MAX_RESUME_TEXT_LENGTH = 8000;
+
     private final AiResumeRecordMapper aiResumeRecordMapper;
     private final ResumeMapper resumeMapper;
     private final AiService aiService;
@@ -66,6 +68,9 @@ public class AiResumeServiceImpl implements AiResumeService {
         }
         if (sourceText == null || sourceText.isBlank()) {
             throw new BusinessException("未识别到简历文字，请重新上传更清晰的简历图片");
+        }
+        if (sourceText.length() > MAX_RESUME_TEXT_LENGTH) {
+            sourceText = sourceText.substring(0, MAX_RESUME_TEXT_LENGTH);
         }
         return polish(studentId, sourceText);
     }

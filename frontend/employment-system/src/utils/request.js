@@ -35,7 +35,12 @@ request.interceptors.response.use(
     return Promise.reject(new Error(res.message))
   },
   error => {
-    ElMessage.error('网络错误，请稍后重试')
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，请稍后重试')
+      return Promise.reject(error)
+    }
+    const msg = error?.response?.data?.message
+    ElMessage.error(msg || '网络错误，请稍后重试')
     return Promise.reject(error)
   }
 )
