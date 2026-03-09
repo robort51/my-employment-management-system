@@ -9,6 +9,13 @@
         <el-form-item prop="password">
           <el-input v-model="form.password" prefix-icon="Lock" type="password" placeholder="密码" size="large" show-password @keyup.enter="handleLogin" />
         </el-form-item>
+        <el-form-item prop="role">
+          <el-radio-group v-model="form.role" size="large">
+            <el-radio-button value="student">我是学生</el-radio-button>
+            <el-radio-button value="company">我是企业</el-radio-button>
+            <el-radio-button value="admin">我是管理员</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" size="large" style="width:100%" :loading="loading" @click="handleLogin">登 录</el-button>
         </el-form-item>
@@ -32,8 +39,9 @@ const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
 
-const form = reactive({ username: '', password: '' })
+const form = reactive({ username: '', password: '', role: 'student' })
 const rules = {
+  role: [{ required: true, message: '请选择身份', trigger: 'change' }],
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
@@ -42,8 +50,12 @@ const handleLogin = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
-    const res = await login(form)
+    const res = await login({ username: form.username, password: form.password })
     const { token, ...user } = res.data
+    if (user.role !== form.role) {
+      ElMessage.error(`账号身份是「${user.role === 'student' ? '学生' : user.role === 'company' ? '企业' : '管理员'}」，请切换后登录`)
+      return
+    }
     userStore.setLogin(token, user)
     ElMessage.success('登录成功')
     router.push(`/${user.role}`)

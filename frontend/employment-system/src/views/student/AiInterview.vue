@@ -45,7 +45,13 @@
     <el-dialog v-model="dialogVisible" title="面试详情" width="600px">
       <div v-if="detail">
         <h4>问答内容：</h4>
-        <div style="white-space:pre-wrap;line-height:1.8;margin-bottom:16px">{{ detail.qaContent }}</div>
+        <div v-if="qaItems.length > 0" class="qa-list">
+          <div v-for="(item, idx) in qaItems" :key="idx" class="qa-item">
+            <p class="q-line"><span class="qa-label">Q{{ idx + 1 }}：</span>{{ item.question || `第${idx + 1}题` }}</p>
+            <p class="a-line"><span class="qa-label">A{{ idx + 1 }}：</span>{{ item.answer || '（该记录未保存回答）' }}</p>
+          </div>
+        </div>
+        <div v-else style="white-space:pre-wrap;line-height:1.8;margin-bottom:16px">{{ detail.qaContent }}</div>
         <h4>AI评价：</h4>
         <div style="white-space:pre-wrap;line-height:1.8">{{ detail.aiFeedback }}</div>
         <p style="margin-top:12px;font-weight:bold">评分：{{ detail.score }} 分</p>
@@ -71,6 +77,7 @@ const recordId = ref(0)
 const records = ref([])
 const dialogVisible = ref(false)
 const detail = ref(null)
+const qaItems = ref([])
 
 const handleStart = async () => {
   if (!jobTitle.value.trim()) return ElMessage.warning('请输入目标职位')
@@ -113,6 +120,7 @@ const viewDetail = async (row) => {
   try {
     const res = await aiInterviewDetail(row.id)
     detail.value = res.data
+    qaItems.value = parseQaContent(res.data?.qaContent)
     dialogVisible.value = true
   } catch (e) {}
 }
@@ -124,6 +132,43 @@ const loadRecords = async () => {
   } catch (e) {}
 }
 
+const parseQaContent = (qaContent) => {
+  if (!qaContent || typeof qaContent !== 'string') return []
+
+  try {
+    const parsed = JSON.parse(qaContent)
+
+    if (Array.isArray(parsed)) {
+      if (parsed.every(item => typeof item === 'object' && item && item.question)) {
+        return parsed.map(item => ({ question: item.question || '', answer: item.answer || '' }))
+      }
+      if (parsed.every(item => typeof item === 'string')) {
+        return parsed.map((answer, idx) => ({ question: `第${idx + 1}题`, answer }))
+      }
+    }
+
+    if (parsed && typeof parsed === 'object') {
+      const qRaw = Array.isArray(parsed.questions) ? parsed.questions : []
+      const aRaw = Array.isArray(parsed.answers) ? parsed.answers : []
+      if (qRaw.length > 0 || aRaw.length > 0) {
+        const size = Math.max(qRaw.length, aRaw.length)
+        return Array.from({ length: size }).map((_, idx) => {
+          const qVal = qRaw[idx]
+          const question = typeof qVal === 'object' && qVal ? (qVal.question || '') : (qVal || '')
+          const answer = aRaw[idx] || ''
+          return { question, answer }
+        })
+      }
+    }
+  } catch (e) {}
+
+  return qaContent
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map((line, idx) => ({ question: `第${idx + 1}题`, answer: line }))
+}
+
 onMounted(loadRecords)
 </script>
 
@@ -133,5 +178,29 @@ onMounted(loadRecords)
   border: 1px solid #e1f3d8;
   border-radius: 8px;
   padding: 16px;
+}
+
+.qa-list {
+  margin-bottom: 16px;
+}
+
+.qa-item {
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.q-line,
+.a-line {
+  margin: 0;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.qa-label {
+  font-weight: 700;
+  color: #409eff;
 }
 </style>

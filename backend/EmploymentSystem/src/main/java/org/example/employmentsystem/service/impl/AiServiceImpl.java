@@ -26,7 +26,7 @@ public class AiServiceImpl implements AiService {
     @Value("${ai.deepseek.model}")
     private String model;
 
-    @Value("${ai.deepseek.timeout-ms:120000}")
+    @Value("${ai.deepseek.timeout-ms:180000}")
     private Integer timeoutMs;
 
     @Override

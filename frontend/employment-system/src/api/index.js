@@ -56,7 +56,8 @@ export const aiInterviewStart = (data) => request.post('/ai/interview/start', da
 export const aiInterviewSubmit = (data) => request.post('/ai/interview/submit', data)
 export const aiInterviewRecords = (params) => request.get('/ai/interview/records', { params })
 export const aiInterviewDetail = (id) => request.get(`/ai/interview/${id}`)
-export const aiCareerGenerate = () => request.post('/ai/career/generate')
+export const aiCareerGenerate = () =>
+  request.post('/ai/career/generate', null, { timeout: 180000 })
 export const aiCareerRecords = (params) => request.get('/ai/career/records', { params })
 
 // ===================== 管理员 =====================
